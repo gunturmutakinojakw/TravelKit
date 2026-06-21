@@ -12,3 +12,21 @@ def validate_references(db):
             print(f"[WARN] Broken references in {table}: {broken}")
             missing_ids.update(broken)
     cursor.close()
+
+# === Stage 38: Add data integrity checks for broken references ===
+# Project: TravelKit
+def validate_integrity(data):
+    if 'places' in data and 'expenses' in data:
+        place_ids = {p['id'] for p in data.get('places', [])}
+        expense_place_ids = {e['place_id'] for e in data.get('expenses', []) if isinstance(e, dict)}
+        broken_refs = list(expense_place_ids - place_ids)
+        if broken_refs:
+            raise ValueError(f"Broken references found: expenses referencing non-existent places {broken_refs}")
+
+    if 'day_plans' in data and 'places' in data:
+        day_plan_place_ids = {dp['place_id'] for dp in data.get('day_plans', []) if isinstance(dp, dict)}
+        broken_refs = list(day_plan_place_ids - place_ids)
+        if broken_refs:
+            raise ValueError(f"Broken references found: day plans referencing non-existent places {broken_refs}")
+
+    return True
